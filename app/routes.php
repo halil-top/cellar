@@ -15,6 +15,7 @@ return function (App $app) {
         return $response;
     });
     
+    //afficher tous les vins
     $app->get('/api/wines', function(Request $request, Response $response) {
         //Récupérer les données de la BD
         //$data = include('public/wines.json');
@@ -52,6 +53,7 @@ return function (App $app) {
                 ->withHeader('charset', 'utf-8');
     });
     
+    //Chercher un vin par son nom
     $app->get('/api/wines/search/{name}', function(Request $request, Response $response, array $args){ 
         //Se connecter au serveur de db
         try{
@@ -85,6 +87,7 @@ return function (App $app) {
                 ->withHeader('charset', 'utf-8');
     });
     
+    //Chercher un vin par son id 
      $app->get('/api/wines/{id}', function(Request $request, Response $response, array $args){ 
         //Se connecter au serveur de db
         try{
@@ -99,6 +102,43 @@ return function (App $app) {
 
             //Extraire les données
             $wines = $statement->fetchAll(PDO::FETCH_CLASS);
+        } catch(PDOException $e){
+            $wines = [
+                [
+                    "error" => "probleme de bdd",
+                    "errorCode" => $e->getCode(),
+                    "errorMsg" => $e->getMessage(),
+                ]              
+            ];
+        }
+        
+        //Convertir les données en JSON
+        $data = json_encode($wines);           //var_dump($wines); die;
+        
+        $response->getBody()->write($data);
+        return $response
+                ->withHeader('content-type', 'application/json')
+                ->withHeader('charset', 'utf-8');
+    });
+    
+    //supprimer un vin par son id
+    $app->delete('/api/wines/{id}', function(Request $request, Response $response, array $args){ 
+        //Se connecter au serveur de db
+        try{
+            
+            $pdo = new PDO('mysql:host=localhost; dbname=cellar', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING]);
+
+            //Préparer la requête
+            $query = "DELETE FROM wine WHERE id='{$args['id']}'";
+            
+            $nbRows = $pdo->exec($query);
+            
+            $wines = $nbRows>0 ? true:[
+                [
+                    "error" => "aucun enregistrement n'a été supprimé",
+                ]
+            ];
+
         } catch(PDOException $e){
             $wines = [
                 [
