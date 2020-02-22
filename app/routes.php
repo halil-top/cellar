@@ -157,6 +157,44 @@ return function (App $app) {
                 ->withHeader('content-type', 'application/json')
                 ->withHeader('charset', 'utf-8');
     });
+    
+    //Ajouter un vin dans la bdd
+    $app->post('/api/wines', function(Request $request, Response $response) {
+        //Récupérer les données de la BD
+        //$data = include('public/wines.json');
+        
+        
+        //Se connecter au serveur de db
+        try{
+            
+            $pdo = new PDO('mysql:host=localhost; dbname=cellar', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING]);
+
+            //Préparer la requête
+            $query = 'SELECT * FROM wine';
+            
+            //Envoyer la requête
+            $statement = $pdo->query($query);
+
+            //Extraire les données
+            $wines = $statement->fetchAll(PDO::FETCH_CLASS);
+        } catch(PDOException $e){
+            $wines = [
+                [
+                    "error" => "probleme de bdd",
+                    "errorCode" => $e->getCode(),
+                    "errorMsg" => $e->getMessage(),
+                ]              
+            ];
+        }
+        
+        //Convertir les données en JSON
+        $data = json_encode($wines);           //var_dump($wines); die;
+        
+        $response->getBody()->write($data);
+        return $response
+                ->withHeader('content-type', 'application/json')
+                ->withHeader('charset', 'utf-8');
+    });
 
     $app->group('/users', function (Group $group) {
         $group->get('/', ListUsersAction::class);
