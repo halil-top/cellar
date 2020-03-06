@@ -121,6 +121,52 @@ return function (App $app) {
                 ->withHeader('charset', 'utf-8');
     });
     
+    $app->get('/api/wines/{id}', function(Request $request, Response $response, array $args){ 
+        //Se connecter au serveur de db
+        try{
+            
+            $pdo = new PDO('mysql:host=localhost; dbname=cellar', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING]);
+
+            //Préparer la requête
+            $query = "INSERT INTO ´wine´"
+                    ."(´id´, ´name´, ´year´, ´grapes´, ´country´,´region´,´description´,´picture´"
+                    ."VALUES (null,:name,:year,:country,:region,:description,:picture";
+            
+            //Envoyer la requête
+            $statement = $pdo->prepare($query);
+            
+            //Executer la requete préparée
+            $result = $statement->execute([
+               ':name' => $wine['name'],
+                ':year' => $wine['year'],
+                ':grapes' => $wine['grapes'],
+                ':country' => $wine['country'],
+                ':region' => $wine['region'],
+                ':description' => $wine['description'],
+                ':picture' => $wine['picture'],
+            ]);
+
+            //Extraire les données
+            $wines = $statement->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e){
+            $wines = [
+                [
+                    "error" => "probleme de bdd",
+                    "errorCode" => $e->getCode(),
+                    "errorMsg" => $e->getMessage(),
+                ]              
+            ];
+        }
+        
+        //Convertir les données en JSON
+        $data = json_encode($wines);           //var_dump($wines); die;
+        
+        $response->getBody()->write($data);
+        return $response
+                ->withHeader('content-type', 'application/json')
+                ->withHeader('charset', 'utf-8');
+    });
+    
     //supprimer un vin par son id
     $app->delete('/api/wines/{id}', function(Request $request, Response $response, array $args){ 
         //Se connecter au serveur de db
@@ -195,6 +241,8 @@ return function (App $app) {
                 ->withHeader('content-type', 'application/json')
                 ->withHeader('charset', 'utf-8');
     });
+    
+    
 
     $app->group('/users', function (Group $group) {
         $group->get('/', ListUsersAction::class);
